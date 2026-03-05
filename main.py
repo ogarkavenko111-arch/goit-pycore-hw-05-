@@ -25,10 +25,10 @@ def load_logs(file_path: str) -> List[dict]:
                 if parsed:
                     logs.append(parsed)
     except FileNotFoundError:
-        print(f"Файл не знайдено: {file_path}")
+        print(f"File not found: {file_path}")
         sys.exit(1)
     except Exception as e:
-        print(f"Помилка при читанні файлу: {e}")
+        print(f"Error readind file: {e}")
         sys.exit(1)
     return logs
 
@@ -38,7 +38,7 @@ def filter_logs_by_level(logs: List[dict], level: str) -> List[dict]:
     Повертає список логів, що відповідають заданому рівню.
     """
     level = level.upper()
-    return list(filter(lambda log: log["level"] == level, logs))
+    return [log for log in logs if log["level"] == level]
 
 
 def count_logs_by_level(logs: List[dict]) -> Dict[str, int]:
@@ -53,33 +53,41 @@ def display_log_counts(counts: Dict[str, int]):
     """
     Виводить підрахунок логів у вигляді таблиці.
     """
-    print(f"{'Рівень логування':<16} | {'Кількість':<8}")
+    print(f"{'Log level':<16} | {'Count':<8}")
     print('-'*25 + '|'+ '-'*8)
     for level, count in counts.items():
         print(f"{level:<16} | {count:<8}")
-
+        
+        
+def display_level_details(logs, level):
+    filtered_logs = filter_logs_by_level(logs, level)
+    if filtered_logs:
+        print(f"\nDetails for level '{level_filter.upper()}':")
+        for log in filtered_logs:
+            print(f"{log['date']} {log['time']} - {log['message']}")
+    else:
+        print(f"\nNo logs for level '{level_filter.upper()}' found")
+        
 
 def main():
     if len(sys.argv) < 2:
-        print("Використання: python main.py <шлях_до_файлу> [рівень_логування]")
+        print("Usage: python main.py <log_file_path> [log_level]")
         sys.exit(1)
 
     file_path = sys.argv[1]
     level_filter = sys.argv[2] if len(sys.argv) > 2 else None
 
     logs = load_logs(file_path)
-    counts = count_logs_by_level(logs)
-    display_log_counts(counts)
-
+    
+    actions = {
+        "display_counts": lambda: display_log_counts(count_logs_by_level(logs)),
+        "display_level": lambda: display_level_details(logs, level_filter) if level_filter else None
+    }
+    
+    actions["display_counts"]()
     if level_filter:
-        filtered_logs = filter_logs_by_level(logs, level_filter)
-        if filtered_logs:
-            print(f"\nДеталі логів для рівня '{level_filter.upper()}':")
-            for log in filtered_logs:
-                print(f"{log['date']} {log['time']} - {log['message']}")
-        else:
-            print(f"\nЗаписів рівня '{level_filter.upper()}' не знайдено.")
-
+        actions["display_level"]()
+   
 
 if __name__ == "__main__":
     main()
