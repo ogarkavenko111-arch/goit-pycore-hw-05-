@@ -14,6 +14,8 @@ def input_error(func):
             return "Enter user name."
         except IndexError:
             return "Not enough arguments."
+        except Exception as e:
+            return f"Unexpected error: {e}"
     return inner
 
 
@@ -22,7 +24,7 @@ contacts = {}
 
 
 @input_error
-def add_contact(args, contacts):
+def add_contact(args):
     """Додає контакт у словник"""
     name, phone = args
     contacts[name] = phone
@@ -30,36 +32,51 @@ def add_contact(args, contacts):
 
 
 @input_error
-def show_phone(args, contacts):
+def show_phone(args):
     """Повертає номер телефону контакту"""
     name = args[0]
     return contacts[name]
 
 
 @input_error
-def show_all(contacts):
+def show_all(args):
     """Повертає всі контакти"""
     if not contacts:
         return "No contacts found."
     return '\n'.join([f"{name}: {phone}" for name, phone in contacts.items()])
 
+def parse_inut(user_input):
+    parts = user_input.split()
+    command = parts[0].lower()
+    args = parts[1:]
+    return command, args
 
 def main():
     print("Welcome to your assistant bot!")
+    
+    commands = {
+        "add": add_contact,
+        "phone": show_phone,
+        "all": show_all
+    }
+    
+    
     while True:
-        command = input("Enter a command: ").strip().lower()
+        user_input = input("Enter a command: ").strip()
         
-        if command == "exit":
+        if not user_input:
+            continue
+        
+        command, args = parse_inut(user_input)
+        
+        if command in ["exit", "close"]:
             print("Goodbye!")
             break
-        elif command.startswith("add"):
-            parts = command.split()[1:]
-            print(add_contact(parts, contacts))
-        elif command.startswith("phone"):
-            parts = command.split()[1:]
-            print(show_phone(parts, contacts))
-        elif command == "all":
-            print(show_all(contacts))
+        
+        func = commands.get(command)
+        
+        if func:
+            print(func(args))
         else:
             print("Unknown command. Available commands: add, phone, all, exit.")
 
